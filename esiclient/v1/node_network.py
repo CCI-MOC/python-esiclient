@@ -10,6 +10,7 @@
 #   License for the specific language governing permissions and limitations
 #   under the License.
 
+import concurrent.futures
 import logging
 
 from osc_lib.command import command
@@ -54,8 +55,14 @@ class List(command.Lister):
             else:
                 node_name = parsed_args.node
         else:
-            ports = ironic_client.port.list(detail=True)
-            nodes = ironic_client.node.list()
+            ports = None
+            nodes = None
+
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                f1 = executor.submit(ironic_client.port.list, detail=True)
+                f2 = executor.submit(ironic_client.node.list)
+                ports = f1.result()
+                nodes = f2.result()
 
         filter_network = None
         if parsed_args.network:
@@ -63,8 +70,14 @@ class List(command.Lister):
             neutron_ports = list(neutron_client.ports(
                 network_id=filter_network.id))
         else:
-            networks = list(neutron_client.networks())
-            neutron_ports = list(neutron_client.ports())
+            networks = None
+            neutron_port = None
+
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                f1 = executor.submit(neutron_client.networks)
+                f2 = executor.submit(neutron_client.ports)
+                networks = list(f1.result())
+                neutron_ports = list(f2.result())
 
         data = []
 
@@ -250,8 +263,14 @@ class Detach(command.Command):
         ironic_client = self.app.client_manager.baremetal
         neutron_client = self.app.client_manager.network
 
-        node = ironic_client.node.get(node_uuid)
-        port = neutron_client.find_port(port_uuid)
+        node = None
+        port = None
+
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            f1 = executor.submit(ironic_client.node.get, node_uuid)
+            f2 = executor.submit(neutron_client.find_port, port_uuid)
+            node = f1.result()
+            port = f2.result()
 
         if not port:
             raise exceptions.CommandError(
