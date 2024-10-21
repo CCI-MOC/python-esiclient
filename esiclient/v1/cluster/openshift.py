@@ -28,7 +28,8 @@ BASE_ASSISTED_INSTALLER_URL = \
     'https://api.openshift.com/api/assisted-install/v2/'
 
 AUTHENTICATION_URL = \
-    'https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token'
+    'https://sso.redhat.com/auth/realms/redhat-external/ \
+        protocol/openid-connect/token'
 
 
 async def check_and_refresh_token():
@@ -45,19 +46,19 @@ async def check_and_refresh_token():
     check_response = requests.get(token_check_url, headers=auth_headers)
 
     if check_response.status_code != 200:
-            payload = {
-                'grant_type': 'refresh_token',
-                'client_id': 'cloud-services',
-                'refresh_token': offline_token
-            }
-            refresh_response = requests.post(AUTHENTICATION_URL, data=payload)
-            if refresh_response.status_code == 200:
-                response_json = refresh_response.json()
-                access_token = response_json['access_token']
-                os.environ['API_TOKEN'] = access_token
-                return access_token
-            else:
-                raise OSAIException('Failed to refresh token')
+        payload = {
+            'grant_type': 'refresh_token',
+            'client_id': 'cloud-services',
+            'refresh_token': offline_token
+        }
+        refresh_response = requests.post(AUTHENTICATION_URL, data=payload)
+        if refresh_response.status_code == 200:
+            response_json = refresh_response.json()
+            access_token = response_json['access_token']
+            os.environ['API_TOKEN'] = access_token
+            return access_token
+        else:
+            raise OSAIException('Failed to refresh token')
     else:
         return access_token
 
