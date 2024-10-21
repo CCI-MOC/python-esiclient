@@ -39,45 +39,69 @@ class TestCallAssistedInstallerAPI(TestCase):
     @mock.patch('requests.patch', autospec=True)
     @mock.patch('requests.get', autospec=True)
     @mock.patch('requests.post', autospec=True)
-    def test_call_assisted_installer_api_post(self, mock_post,
+    @mock.patch(
+        'esiclient.v1.cluster.openshift.check_and_refresh_token',
+        autospec=True)
+    def test_call_assisted_installer_api_post(self, mock_cart,
+                                              mock_post,
                                               mock_get, mock_patch):
         mock_post.return_value = MockResponse()
+
+        mock_cart.return_value = 'access_token'
 
         openshift.call_assisted_installer_api('test', 'post')
 
         mock_post.assert_called_once_with(
             openshift.BASE_ASSISTED_INSTALLER_URL + "test",
-            headers={}, json=None)
+            headers={
+                'Authorization': 'Bearer access_token'
+            }, json=None)
         mock_get.assert_not_called
         mock_patch.assert_not_called
 
     @mock.patch('requests.patch', autospec=True)
     @mock.patch('requests.get', autospec=True)
     @mock.patch('requests.post', autospec=True)
-    def test_call_assisted_installer_api_get(self, mock_post,
+    @mock.patch(
+        'esiclient.v1.cluster.openshift.check_and_refresh_token',
+        autospec=True)
+    def test_call_assisted_installer_api_get(self, mock_cart,
+                                             mock_post,
                                              mock_get, mock_patch):
         mock_get.return_value = MockResponse()
+
+        mock_cart.return_value = 'access_token'
 
         openshift.call_assisted_installer_api('test', 'get')
 
         mock_get.assert_called_once_with(
             openshift.BASE_ASSISTED_INSTALLER_URL + "test",
-            headers={})
+            headers={
+                'Authorization': 'Bearer access_token'
+            })
         mock_post.assert_not_called
         mock_patch.assert_not_called
 
     @mock.patch('requests.patch', autospec=True)
     @mock.patch('requests.get', autospec=True)
     @mock.patch('requests.post', autospec=True)
-    def test_call_assisted_installer_api_patch(self, mock_post,
+    @mock.patch(
+        'esiclient.v1.cluster.openshift.check_and_refresh_token',
+        autospec=True)
+    def test_call_assisted_installer_api_patch(self, mock_cart,
+                                               mock_post,
                                                mock_get, mock_patch):
         mock_patch.return_value = MockResponse()
+
+        mock_cart.return_value = 'access_token'
 
         openshift.call_assisted_installer_api('test', 'patch')
 
         mock_patch.assert_called_once_with(
             openshift.BASE_ASSISTED_INSTALLER_URL + "test",
-            headers={}, json=None)
+            headers={
+                'Authorization': 'Bearer access_token'
+            }, json=None)
         mock_get.assert_not_called
         mock_post.assert_not_called
 
