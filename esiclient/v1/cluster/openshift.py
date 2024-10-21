@@ -15,6 +15,7 @@ import logging
 import os
 import requests
 import time
+import asyncio
 
 from osc_lib.command import command
 from osc_lib.i18n import _
@@ -26,8 +27,42 @@ from esiclient.v1.cluster import utils
 BASE_ASSISTED_INSTALLER_URL = \
     'https://api.openshift.com/api/assisted-install/v2/'
 
+AUTHENTICATION_URL = \
+    'https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token'
+
+
+async def check_and_refresh_token():
+    access_token = os.getenv('API_TOKEN', '')
+    offline_token = os.getenv('OFFLINE_TOKEN', '')
+
+    if access_token == '':
+        raise OSAIException('API_TOKEN not set in environment')
+    if offline_token == '':
+        raise OSAIException('OFFLINE_TOKEN not set in environment')
+    
+    token_check_url = BASE_ASSISTED_INSTALLER_URL + 'component-versions'
+    token_check_response = requests.get(token_check_url, headers={'Authorization': 'Bearer ' + access_token})
+
+    if token_check_response.status_code != 200:
+            payload = {
+                'grant_type': 'refresh_token',
+                'client_id': 'cloud-services',
+                'refresh_token': offline_token
+            }
+            refresh_token_response = requests.post(AUTHENTICATION_URL, data=payload)
+            if refresh_token_response.status_code == 200:
+                response_json = refresh_token_response.json()
+                access_token = response_json['access_token']
+                os.environ['API_TOKEN'] = access_token
+                return access_token
+            else:
+                raise OSAIException('Failed to refresh token')
+    else:
+        return access_token
 
 def call_assisted_installer_api(url, method, headers={}, data=None):
+    access_token = asyncio.run(check_and_refresh_token())
+    headers['Authorization'] = 'Bearer ' + access_token
     full_url = BASE_ASSISTED_INSTALLER_URL + url
     if method == 'post':
         response = requests.post(full_url, headers=headers, json=data)
@@ -93,8 +128,8 @@ class Orchestrate(command.Lister):
         if message:
             print(message)
         print("* %s" % str(exception))
-        if isinstance(exception, OSAIException):
-            print("* YOU MAY NEED TO REFRESH YOUR OPENSHIFT API TOKEN")
+        # if isinstance(exception, OSAIException):
+        #     print("* YOU MAY NEED TO REFRESH YOUR OPENSHIFT API TOKEN")
         print("Run this command to continue installation:")
         print("* %s" % command)
         return
