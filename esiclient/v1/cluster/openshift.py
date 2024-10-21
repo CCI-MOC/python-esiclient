@@ -10,12 +10,12 @@
 #   License for the specific language governing permissions and limitations
 #   under the License.
 
+import asyncio
 import json
 import logging
 import os
 import requests
 import time
-import asyncio
 
 from osc_lib.command import command
 from osc_lib.i18n import _
@@ -39,19 +39,20 @@ async def check_and_refresh_token():
         raise OSAIException('API_TOKEN not set in environment')
     if offline_token == '':
         raise OSAIException('OFFLINE_TOKEN not set in environment')
-    
-    token_check_url = BASE_ASSISTED_INSTALLER_URL + 'component-versions'
-    token_check_response = requests.get(token_check_url, headers={'Authorization': 'Bearer ' + access_token})
 
-    if token_check_response.status_code != 200:
+    token_check_url = BASE_ASSISTED_INSTALLER_URL + 'component-versions'
+    auth_headers = {'Authorization': 'Bearer ' + access_token}
+    check_response = requests.get(token_check_url, headers=auth_headers)
+
+    if check_response.status_code != 200:
             payload = {
                 'grant_type': 'refresh_token',
                 'client_id': 'cloud-services',
                 'refresh_token': offline_token
             }
-            refresh_token_response = requests.post(AUTHENTICATION_URL, data=payload)
-            if refresh_token_response.status_code == 200:
-                response_json = refresh_token_response.json()
+            refresh_response = requests.post(AUTHENTICATION_URL, data=payload)
+            if refresh_response.status_code == 200:
+                response_json = refresh_response.json()
                 access_token = response_json['access_token']
                 os.environ['API_TOKEN'] = access_token
                 return access_token
@@ -59,6 +60,7 @@ async def check_and_refresh_token():
                 raise OSAIException('Failed to refresh token')
     else:
         return access_token
+
 
 def call_assisted_installer_api(url, method, headers={}, data=None):
     access_token = asyncio.run(check_and_refresh_token())
