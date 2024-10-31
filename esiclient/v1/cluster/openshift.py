@@ -32,20 +32,20 @@ AUTHENTICATION_URL = \
         protocol/openid-connect/token'
 
 
-async def check_and_refresh_token():
+def check_and_refresh_token():
     access_token = os.getenv('API_TOKEN', '')
     offline_token = os.getenv('OFFLINE_TOKEN', '')
 
     if access_token == '':
         raise OSAIException('API_TOKEN not set in environment')
-    if offline_token == '':
-        raise OSAIException('OFFLINE_TOKEN not set in environment')
 
     token_check_url = BASE_ASSISTED_INSTALLER_URL + 'component-versions'
     auth_headers = {'Authorization': 'Bearer ' + access_token}
     check_response = requests.get(token_check_url, headers=auth_headers)
 
     if check_response.status_code != 200:
+        if offline_token == '':
+            print("* YOU MAY NEED TO REFRESH YOUR OPENSHIFT API TOKEN")
         payload = {
             'grant_type': 'refresh_token',
             'client_id': 'cloud-services',
@@ -64,7 +64,7 @@ async def check_and_refresh_token():
 
 
 def call_assisted_installer_api(url, method, headers={}, data=None):
-    access_token = asyncio.run(check_and_refresh_token())
+    access_token = check_and_refresh_token()
     headers['Authorization'] = 'Bearer ' + access_token
     full_url = BASE_ASSISTED_INSTALLER_URL + url
     if method == 'post':
@@ -131,8 +131,6 @@ class Orchestrate(command.Lister):
         if message:
             print(message)
         print("* %s" % str(exception))
-        # if isinstance(exception, OSAIException):
-        #     print("* YOU MAY NEED TO REFRESH YOUR OPENSHIFT API TOKEN")
         print("Run this command to continue installation:")
         print("* %s" % command)
         return
