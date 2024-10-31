@@ -45,7 +45,7 @@ def check_and_refresh_token():
     if check_response.status_code != 200:
         if offline_token == '':
             print("* YOU MAY NEED TO REFRESH YOUR OPENSHIFT API TOKEN")
-            print("* You can set OFFLINE_TOKEN in your environment to auto-refresh")
+            print("* You can set OFFLINE_TOKEN to auto refresh API TOKEN")
         payload = {
             'grant_type': 'refresh_token',
             'client_id': 'cloud-services',
