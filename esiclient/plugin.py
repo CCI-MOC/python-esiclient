@@ -18,7 +18,7 @@ from osc_lib import utils
 
 LOG = logging.getLogger(__name__)
 
-DEFAULT_BAREMETAL_API_VERSION = '1.69'
+DEFAULT_BAREMETAL_API_VERSION = os.getenv('OS_BAREMETAL_API_VERSION', '1.72')
 DEFAULT_ESICLIENT_API_VERSION = '1'
 
 # Required by the OSC plugin interface
