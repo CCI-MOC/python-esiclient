@@ -82,6 +82,13 @@ class Create(command.ShowOne):
 
         trunk_name = parsed_args.name
         network = neutron_client.find_network(parsed_args.native_network)
+
+        if network is None:
+            raise exceptions.CommandError(
+                "ERROR: Native network '{}' could not be found. Please check "
+                "the name or ID.".format(parsed_args.native_network)
+            )
+
         tagged_networks = parsed_args.tagged_networks
 
         trunk, trunk_port = utils.create_trunk(

@@ -223,6 +223,25 @@ class TestCreate(base.TestCommand):
             ['network2', 'network3']
         )
 
+    def test_take_action_native_network_not_found(self):
+        self.app.client_manager.network.find_network.return_value = None
+
+        arglist = ['trunk', '--native-network', 'nonexistent-network']
+        verifylist = []
+
+        parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+
+        self.assertRaisesRegex(
+            exceptions.CommandError,
+            "ERROR: Native network 'nonexistent-network' could not be found. "
+            "Please check the name or ID.",
+            self.cmd.take_action, parsed_args
+        )
+
+        self.app.client_manager.network.find_network.assert_called_once_with(
+            "nonexistent-network"
+        )
+
 
 class TestDelete(base.TestCommand):
 

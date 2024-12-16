@@ -12,6 +12,8 @@
 
 import subprocess
 
+from openstack import exceptions
+
 
 def get_network_display_name(network):
     """Return Neutron network name with vlan, if any
@@ -221,6 +223,14 @@ def create_trunk(neutron_client, trunk_name, network, tagged_networks=[]):
     sub_ports = []
     for tagged_network_name in tagged_networks:
         tagged_network = neutron_client.find_network(tagged_network_name)
+
+        if not tagged_network:
+            raise exceptions.ResourceNotFound(
+                "Tagged network '{}' could not be found.".format(
+                    tagged_network_name
+                )
+            )
+
         sub_port_name = get_port_name(
             tagged_network.name, prefix=trunk_name, suffix='sub-port')
         sub_port = neutron_client.create_port(
