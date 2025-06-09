@@ -253,7 +253,7 @@ class TestCreate(base.TestCommand):
         self.assertEqual(expected, results)
         self.app.client_manager.network.find_network.assert_has_calls(
             [
-                mock.call("network1"),
+                mock.call("network1", ignore_missing=False),
             ]
         )
         mock_create_trunk.assert_called_once_with(

@@ -77,7 +77,9 @@ class Create(command.ShowOne):
         neutron_client = self.app.client_manager.network
 
         trunk_name = parsed_args.name
-        network = neutron_client.find_network(parsed_args.native_network)
+        network = neutron_client.find_network(
+            parsed_args.native_network, ignore_missing=False
+        )
         tagged_networks = parsed_args.tagged_networks
 
         trunk, trunk_port = utils.create_trunk(
