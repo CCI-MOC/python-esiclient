@@ -144,22 +144,25 @@ class TestNetworkOpsMixin(PortForwardTestCase):
         self.netops.app.client_manager.sdk_connection = self.connection
 
     def test_find_port_given_port(self):
-        assert self.netops.find_port("myport") == "myport"
+        assert self.netops.find_port("myport", None) == "myport"
 
     def test_find_port_given_address(self):
         self.connection.network.ports.return_value = [self.port_1]
-        assert self.netops.find_port(ipaddress.ip_address("10.10.10.10")) == self.port_1
+        assert (
+            self.netops.find_port(ipaddress.ip_address("10.10.10.10"), None)
+            == self.port_1
+        )
 
     def test_find_port_given_missing_address(self):
         self.connection.network.ports.return_value = []
-        self.assertRaises(
-            KeyError, self.netops.find_port, ipaddress.ip_address("10.10.10.10")
+        self.assertIsNone(
+            self.netops.find_port(ipaddress.ip_address("10.10.10.10"), None)
         )
 
     def test_find_port_given_multiple_matches(self):
         self.connection.network.ports.return_value = [self.port_1, self.port_1]
         self.assertRaises(
-            ValueError, self.netops.find_port, ipaddress.ip_address("10.10.10.10")
+            ValueError, self.netops.find_port, ipaddress.ip_address("10.10.10.10"), None
         )
 
     def test_find_or_create_port_given_existing_address(self):
@@ -276,7 +279,16 @@ class TestCreate(PortForwardTestCase):
             self.forward_1
         )
         parser = self.cmd.get_parser("test")
-        args = parser.parse_args(["-p", "22", "10.10.10.10", "111.111.111.111"])
+        args = parser.parse_args(
+            [
+                "--internal-ip-network",
+                "testnetwork",
+                "-p",
+                "22",
+                "10.10.10.10",
+                "111.111.111.111",
+            ]
+        )
         res = self.cmd.take_action(args)
         assert res == (
             [
